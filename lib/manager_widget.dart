@@ -2,12 +2,11 @@ import 'package:flutter/scheduler.dart';
 import 'package:flutter/widgets.dart';
 
 import 'inherited_model.dart';
-import 'shared_value.dart';
 
 class StateManagerWidget extends StatefulWidget {
   final Widget child;
   final StateManagerWidgetState state;
-  final Map<SharedValue, double> stateNonceMap;
+  final Map<int, double> stateNonceMap;
 
   const StateManagerWidget(
     this.child,

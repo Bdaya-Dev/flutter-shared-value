@@ -1,9 +1,8 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
 
-import 'shared_value.dart';
-
-class SharedValueInheritedModel extends InheritedModel<SharedValue> {
-  final Map<SharedValue, double> stateNonceMap;
+class SharedValueInheritedModel extends InheritedModel<int> {
+  final Map<int, double> stateNonceMap;
 
   const SharedValueInheritedModel({
     Key? key,
@@ -11,25 +10,24 @@ class SharedValueInheritedModel extends InheritedModel<SharedValue> {
     required this.stateNonceMap,
   }) : super(key: key, child: child);
 
-  // fallback to updateShouldNotifyDependent()
   @override
-  bool updateShouldNotify(InheritedWidget oldWidget) => true;
+  bool updateShouldNotify(SharedValueInheritedModel oldWidget) =>
+      !mapEquals(oldWidget.stateNonceMap, stateNonceMap);
 
   @override
   bool updateShouldNotifyDependent(
     SharedValueInheritedModel oldWidget,
-    Set<SharedValue> dependencies,
+    Set<int> dependencies,
   ) {
-    for (SharedValue sharedValue in dependencies) {
-      // Compare the nonce value of this SharedValue,
-      // with an older nonce value of the same SharedValue object.
-      //
-      // If the nonce values are not same,
-      // rebuild the widget
-      if (sharedValue.nonce != oldWidget.stateNonceMap[sharedValue]) {
-        return true;
-      }
-    }
-    return false;
+    // Compare the nonce value of this SharedValue,
+    // with an older nonce value of the same SharedValue object.
+    //
+    // If the nonce values are not same,
+    // rebuild the widget
+    return dependencies.any(
+      (sharedValueHash) =>
+          stateNonceMap[sharedValueHash] !=
+          oldWidget.stateNonceMap[sharedValueHash],
+    );
   }
 }

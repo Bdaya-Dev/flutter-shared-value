@@ -12,9 +12,11 @@ import 'manager_widget.dart';
 
 class SharedValue<T> {
   static final random = Random();
-  static late final StateManagerWidgetState stateManager =
-      StateManagerWidgetState();
-  static final stateNonceMap = <SharedValue, double>{};
+  static final stateManager = StateManagerWidgetState();
+
+  //Maps a sharedvalue hashcode to its nonce
+  //This way SharedValue instances can be garbage collected safely
+  static final stateNonceMap = <int, double>{};
 
   static bool didWrap = false;
 
@@ -25,7 +27,11 @@ class SharedValue<T> {
   /// This must be done exactly once for the whole application.
   static Widget wrapApp(Widget app) {
     didWrap = true;
-    return StateManagerWidget(app, stateManager, stateNonceMap);
+    return StateManagerWidget(
+      app,
+      stateManager,
+      stateNonceMap,
+    );
   }
 
   T _value;
@@ -107,7 +113,7 @@ class SharedValue<T> {
     if (context != null) {
       InheritedModel.inheritFrom<SharedValueInheritedModel>(
         context,
-        aspect: this,
+        aspect: identityHashCode(this),
       );
     }
     return _value;
@@ -117,6 +123,11 @@ class SharedValue<T> {
   Stream<T> get stream {
     _controller ??= StreamController.broadcast();
     return _controller!.stream;
+  }
+
+  Stream<T> get streamWithInitial async* {
+    yield _value;
+    yield* stream;
   }
 
   /// Set [$] to [value], but only if they're different
@@ -134,7 +145,7 @@ class SharedValue<T> {
   void _update({init: false}) {
     // update the nonce
     nonce = random.nextDouble();
-    stateNonceMap[this] = nonce!;
+    stateNonceMap[identityHashCode(this)] = nonce!;
 
     if (!init) {
       // rebuild state manger widget

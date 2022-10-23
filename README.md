@@ -1,4 +1,10 @@
-[![pub package](https://img.shields.io/pub/v/shared_value.svg?style=for-the-badge)](https://pub.dartlang.org/packages/shared_value)
+[![pub package](https://img.shields.io/pub/v/bdaya_shared_value.svg?style=for-the-badge)](https://pub.dartlang.org/packages/bdaya_shared_value)
+
+# NOTICE
+
+This is an opinionated fork of the original package here
+* Github: https://github.com/devxpy/flutter-shared-value
+* Pub: https://pub.dev/packages/shared_value
 
 # Shared Value
 

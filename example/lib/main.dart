@@ -1,7 +1,7 @@
 import 'dart:async';
 
+import 'package:bdaya_shared_value/bdaya_shared_value.dart';
 import 'package:flutter/material.dart';
-import 'package:shared_value/shared_value.dart';
 
 // This global SharedValue can be shared across the entire app
 final SharedValue<int> counter = SharedValue(
