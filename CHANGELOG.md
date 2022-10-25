@@ -1,3 +1,7 @@
+## [3.1.1] - 26/10/2022
+
+* Fixed `streamWithInitial`
+
 ## [3.1.0] - 23/10/2022
 
 * Add support for custom save/load logic

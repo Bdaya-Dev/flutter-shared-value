@@ -1,6 +1,6 @@
 name: bdaya_shared_value
 description: A straightforward way to manage global state in flutter apps.
-version: 3.1.0
+version: 3.1.1
 homepage: https://github.com/Bdaya-Dev/flutter-shared-value
 
 environment:

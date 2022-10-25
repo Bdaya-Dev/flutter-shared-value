@@ -126,8 +126,9 @@ class SharedValue<T> {
   }
 
   Stream<T> get streamWithInitial async* {
+    _controller ??= StreamController.broadcast();
     yield _value;
-    yield* stream;
+    yield* _controller!.stream;
   }
 
   /// Set [$] to [value], but only if they're different
