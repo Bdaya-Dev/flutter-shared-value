@@ -1,3 +1,7 @@
+## [3.1.2] - 26/10/2022
+
+* Fixed `streamWithInitial` with rxdart
+
 ## [3.1.1] - 26/10/2022
 
 * Fixed `streamWithInitial`

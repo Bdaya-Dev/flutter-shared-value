@@ -9,6 +9,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'inherited_model.dart';
 import 'manager_widget.dart';
+import 'package:rxdart/rxdart.dart';
 
 class SharedValue<T> {
   static final random = Random();
@@ -125,10 +126,8 @@ class SharedValue<T> {
     return _controller!.stream;
   }
 
-  Stream<T> get streamWithInitial async* {
-    _controller ??= StreamController.broadcast();
-    yield _value;
-    yield* _controller!.stream;
+  Stream<T> get streamWithInitial {
+    return stream.startWith($);
   }
 
   /// Set [$] to [value], but only if they're different
