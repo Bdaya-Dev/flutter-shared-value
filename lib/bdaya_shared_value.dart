@@ -46,11 +46,11 @@ class SharedValue<T> {
   /// automatically save to shared preferences when the value changes
   final bool autosave;
 
-  /// customize encode function
-  final String Function(T val)? customEncode;
+  /// customize encode function, returning null indicates removing the key from storage
+  final String? Function(T val)? customEncode;
 
-  /// customize decode function
-  final T Function(String val)? customDecode;
+  /// customize decode function, null idicates the key not existing in storage
+  final T Function(String? val)? customDecode;
 
   /// customize save function
   final Future<void> Function(T val)? customSave;
@@ -172,13 +172,13 @@ class SharedValue<T> {
 
   /// Try to load the value stored at [key] in shared preferences.
   /// If no value is found, return immediately.
-  /// Else, udpdate [$] and rebuild dependent widgets if it changed.
+  /// Else, update [$] and rebuild dependent widgets if it changed.
   Future<void> load() async {
     if (customLoad == null) {
       assert(key != null);
       final pref = await SharedPreferences.getInstance();
       final str = pref.getString(key!);
-      if (str == null) return;
+      if (str == null && customDecode == null) return;
       $ = deserialize(str);
     } else {
       $ = await customLoad!();
@@ -191,14 +191,18 @@ class SharedValue<T> {
       assert(key != null);
       final toSave = serialize(_value);
       final pref = await SharedPreferences.getInstance();
-      await pref.setString(key!, toSave);
+      if (toSave == null) {
+        await pref.remove(key!);
+      } else {
+        await pref.setString(key!, toSave);
+      }
     } else {
       await customSave!(_value);
     }
   }
 
   /// serialize [obj] of type [T] for shared preferences.
-  String serialize(T obj) {
+  String? serialize(T obj) {
     if (customEncode == null) {
       return jsonEncode(obj);
     } else {
@@ -207,9 +211,9 @@ class SharedValue<T> {
   }
 
   /// desrialize [str] to an obj of type [T] for shared preferences.
-  T deserialize(String str) {
+  T deserialize(String? str) {
     if (customDecode == null) {
-      return jsonDecode(str) as T;
+      return jsonDecode(str!) as T;
     } else {
       return customDecode!(str);
     }
