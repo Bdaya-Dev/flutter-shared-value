@@ -76,7 +76,7 @@ class CounterText extends StatelessWidget {
 
     return Text(
       '$counterValue',
-      style: Theme.of(context).textTheme.headline4,
+      style: Theme.of(context).textTheme.headlineLarge,
     );
   }
 }
