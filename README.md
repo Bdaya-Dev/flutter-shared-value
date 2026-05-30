@@ -1,4 +1,4 @@
-[![pub package](https://img.shields.io/pub/v/bdaya_shared_value.svg?style=for-the-badge)](https://pub.dartlang.org/packages/bdaya_shared_value)
+[![pub package](https://img.shields.io/pub/v/bdaya_shared_value.svg?style=for-the-badge)](https://pub.dev/packages/bdaya_shared_value)
 
 # NOTICE
 
@@ -81,7 +81,7 @@ void main() async {
   await counter.load();
 
   // Store [counter]'s value to shared preferences (enabling `autosave` does this automatically)
-  await counter.store();
+  await counter.save();
 }
 ```
 

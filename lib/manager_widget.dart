@@ -12,10 +12,11 @@ class StateManagerWidget extends StatefulWidget {
     this.child,
     this.state,
     this.stateNonceMap, {
-    Key? key,
-  }) : super(key: key);
+    super.key,
+  });
 
   @override
+  // ignore: no_logic_in_create_state
   StateManagerWidgetState createState() => state;
 }
 
@@ -36,14 +37,10 @@ class StateManagerWidgetState extends State<StateManagerWidget> {
   @override
   Widget build(BuildContext context) {
     return SharedValueInheritedModel(
-      child: widget.child,
-      // IMPORTANT!
-      // A copy of stateNonceMap must be provided here.
-      //
-      // If the same object is passed,
-      // then SharedValueInheritedModel won't be able to compare nonce values,
-      // since the mutations will be propagated throughout the code path.
+      // A copy of stateNonceMap must be provided here so that
+      // SharedValueInheritedModel can compare old vs new nonce values.
       stateNonceMap: Map.of(widget.stateNonceMap),
+      child: widget.child,
     );
   }
 }
