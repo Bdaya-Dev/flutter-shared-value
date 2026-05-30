@@ -24,6 +24,9 @@
 # Claude Code / oh-my-claudecode
 .omc/
 
+# Generated plugin registrants
+**/generated_plugin_registrant.dart
+
 # Flutter/Dart/Pub related
 **/doc/api/
 .dart_tool/

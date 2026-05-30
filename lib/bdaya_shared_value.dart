@@ -3,7 +3,6 @@ import 'dart:convert';
 import 'dart:math';
 
 import 'package:flutter/widgets.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 import 'inherited_model.dart';
 import 'manager_widget.dart';
@@ -164,35 +163,30 @@ class SharedValue<T> {
     return $;
   }
 
-  /// Try to load the value stored at [key] in shared preferences.
-  /// If no value is found, return immediately.
-  /// Else, update [$] and rebuild dependent widgets if it changed.
+  /// Load a persisted value and update [$].
+  ///
+  /// Requires [customLoad] to be set. Use a persistence package
+  /// (e.g. `bdaya_shared_value_prefs`) or provide your own callback.
   Future<void> load() async {
-    if (customLoad == null) {
-      assert(key != null);
-      final pref = await SharedPreferences.getInstance();
-      final str = pref.getString(key!);
-      if (str == null && customDecode == null) return;
-      $ = deserialize(str);
-    } else {
-      $ = await customLoad!();
-    }
+    assert(
+      customLoad != null,
+      'customLoad is required. Provide a customLoad callback or use a '
+      'persistence package like bdaya_shared_value_prefs.',
+    );
+    $ = await customLoad!();
   }
 
-  /// Store the current [$] at [key] in shared preferences.
+  /// Persist the current [$].
+  ///
+  /// Requires [customSave] to be set. Use a persistence package
+  /// (e.g. `bdaya_shared_value_prefs`) or provide your own callback.
   Future<void> save() async {
-    if (customSave == null) {
-      assert(key != null);
-      final toSave = serialize(_value);
-      final pref = await SharedPreferences.getInstance();
-      if (toSave == null) {
-        await pref.remove(key!);
-      } else {
-        await pref.setString(key!, toSave);
-      }
-    } else {
-      await customSave!(_value);
-    }
+    assert(
+      customSave != null,
+      'customSave is required. Provide a customSave callback or use a '
+      'persistence package like bdaya_shared_value_prefs.',
+    );
+    await customSave!(_value);
   }
 
   /// serialize [obj] of type [T] for shared preferences.

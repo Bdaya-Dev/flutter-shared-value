@@ -2,13 +2,11 @@ import 'package:bdaya_shared_value/bdaya_shared_value.dart';
 import 'package:bdaya_shared_value/inherited_model.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
   setUp(() {
     SharedValue.didWrap = true;
     SharedValue.stateNonceMap.clear();
-    SharedPreferences.setMockInitialValues({});
   });
 
   group('SharedValue - initial value', () {
@@ -126,30 +124,32 @@ void main() {
       await sub.cancel();
     });
 
-    test('streamWithInitial supports multiple independent subscriptions',
-        () async {
-      final sv = SharedValue(value: 10);
-      final valuesA = <int>[];
-      final valuesB = <int>[];
+    test(
+      'streamWithInitial supports multiple independent subscriptions',
+      () async {
+        final sv = SharedValue(value: 10);
+        final valuesA = <int>[];
+        final valuesB = <int>[];
 
-      final subA = sv.streamWithInitial.listen(valuesA.add);
-      await Future<void>.delayed(Duration.zero);
+        final subA = sv.streamWithInitial.listen(valuesA.add);
+        await Future<void>.delayed(Duration.zero);
 
-      sv.$ = 20;
-      await Future<void>.delayed(Duration.zero);
+        sv.$ = 20;
+        await Future<void>.delayed(Duration.zero);
 
-      final subB = sv.streamWithInitial.listen(valuesB.add);
-      await Future<void>.delayed(Duration.zero);
+        final subB = sv.streamWithInitial.listen(valuesB.add);
+        await Future<void>.delayed(Duration.zero);
 
-      sv.$ = 30;
-      await Future<void>.delayed(Duration.zero);
+        sv.$ = 30;
+        await Future<void>.delayed(Duration.zero);
 
-      expect(valuesA, [10, 20, 30]);
-      expect(valuesB, [20, 30]);
+        expect(valuesA, [10, 20, 30]);
+        expect(valuesB, [20, 30]);
 
-      await subA.cancel();
-      await subB.cancel();
-    });
+        await subA.cancel();
+        await subB.cancel();
+      },
+    );
 
     test('streamWithInitial does not duplicate the initial value', () async {
       final sv = SharedValue(value: 7);
@@ -249,72 +249,99 @@ void main() {
   });
 
   group('SharedValue - persistence', () {
-    test('save and load round-trip with JSON', () async {
-      final sv1 = SharedValue<int>(value: 42, key: 'test_int');
+    test('save and load round-trip via customSave/customLoad', () async {
+      final store = <String, int>{};
+      final sv1 = SharedValue<int>(
+        value: 42,
+        key: 'test_int',
+        customSave: (v) async => store['test_int'] = v,
+        customLoad: () async => store['test_int'] ?? 0,
+      );
       await sv1.save();
 
-      final sv2 = SharedValue<int>(value: 0, key: 'test_int');
+      final sv2 = SharedValue<int>(
+        value: 0,
+        key: 'test_int',
+        customSave: (v) async => store['test_int'] = v,
+        customLoad: () async => store['test_int'] ?? 0,
+      );
       await sv2.load();
       expect(sv2.$, 42);
     });
 
-    test('load with no stored value keeps default', () async {
-      final sv = SharedValue<int>(value: 99, key: 'nonexistent');
+    test('load returns customLoad value', () async {
+      final sv = SharedValue<int>(
+        value: 0,
+        customLoad: () async => 99,
+        customSave: (_) async {},
+      );
       await sv.load();
       expect(sv.$, 99);
     });
 
-    test('save null via customEncode removes key', () async {
-      final sv = SharedValue<String?>(
-        value: 'hello',
-        key: 'nullable_key',
-        customEncode: (v) => v,
-        customDecode: (s) => s,
-      );
-      await sv.save();
-
-      sv.$ = null;
-      await sv.save();
-
-      final prefs = await SharedPreferences.getInstance();
-      expect(prefs.getString('nullable_key'), isNull);
-    });
-
-    test('autosave persists on change', () async {
+    test('save calls customSave with current value', () async {
+      int? saved;
       final sv = SharedValue<int>(
         value: 0,
-        key: 'autosave_key',
+        customSave: (v) async => saved = v,
+        customLoad: () async => 0,
+      );
+      sv.$ = 42;
+      await sv.save();
+      expect(saved, 42);
+    });
+
+    test('autosave triggers customSave on value change', () async {
+      int? saved;
+      final sv = SharedValue<int>(
+        value: 0,
         autosave: true,
+        customSave: (v) async => saved = v,
+        customLoad: () async => 0,
       );
 
       sv.$ = 42;
       await Future<void>.delayed(const Duration(milliseconds: 50));
+      expect(saved, 42);
+    });
 
-      final prefs = await SharedPreferences.getInstance();
-      expect(prefs.getString('autosave_key'), '42');
+    test('load asserts when customLoad is null', () {
+      final sv = SharedValue<int>(value: 0, key: 'k');
+      expect(() => sv.load(), throwsA(isA<AssertionError>()));
+    });
+
+    test('save asserts when customSave is null', () {
+      final sv = SharedValue<int>(value: 0, key: 'k');
+      expect(() => sv.save(), throwsA(isA<AssertionError>()));
     });
   });
 
   group('SharedValue - customEncode/customDecode', () {
-    test('custom encoder and decoder round-trip', () async {
-      final sv1 = SharedValue<List<int>>(
+    test('serialize uses customEncode when provided', () {
+      final sv = SharedValue<List<int>>(
         value: [1, 2, 3],
-        key: 'list_key',
         customEncode: (v) => v.join(','),
-        customDecode: (s) =>
-            s == null ? <int>[] : s.split(',').map(int.parse).toList(),
       );
-      await sv1.save();
+      expect(sv.serialize([1, 2, 3]), '1,2,3');
+    });
 
-      final sv2 = SharedValue<List<int>>(
-        value: <int>[],
-        key: 'list_key',
-        customEncode: (v) => v.join(','),
+    test('serialize falls back to jsonEncode', () {
+      final sv = SharedValue<int>(value: 42);
+      expect(sv.serialize(42), '42');
+    });
+
+    test('deserialize uses customDecode when provided', () {
+      final sv = SharedValue<List<int>>(
+        value: [],
         customDecode: (s) =>
             s == null ? <int>[] : s.split(',').map(int.parse).toList(),
       );
-      await sv2.load();
-      expect(sv2.$, [1, 2, 3]);
+      expect(sv.deserialize('1,2,3'), [1, 2, 3]);
+    });
+
+    test('deserialize falls back to jsonDecode', () {
+      final sv = SharedValue<int>(value: 0);
+      expect(sv.deserialize('42'), 42);
     });
 
     test('customDecode receives null for missing key (v3.1.3 fix)', () async {
@@ -326,29 +353,45 @@ void main() {
           received = s;
           return s ?? 'fallback';
         },
+        customLoad: () async => 'fallback',
       );
-      await sv.load();
+      // Verify customDecode handles null correctly (unit test of deserialize)
+      final result = sv.deserialize(null);
       expect(received, isNull);
-      expect(sv.$, 'fallback');
+      expect(result, 'fallback');
     });
-  });
 
-  group('SharedValue - customSave/customLoad', () {
-    test('custom save and load round-trip', () async {
-      String? storage;
-      final sv = SharedValue<int>(
-        value: 0,
-        customSave: (v) async => storage = v.toString(),
-        customLoad: () async => int.parse(storage ?? '0'),
+    test('custom encode/decode round-trip via persistence', () async {
+      final store = <String, String?>{};
+
+      final sv1 = SharedValue<List<int>>(
+        value: [1, 2, 3],
+        key: 'list_key',
+        customEncode: (v) => v.join(','),
+        customDecode: (s) =>
+            s == null ? <int>[] : s.split(',').map(int.parse).toList(),
+        customSave: (v) async => store['list_key'] = v.join(','),
+        customLoad: () async {
+          final s = store['list_key'];
+          return s == null ? <int>[] : s.split(',').map(int.parse).toList();
+        },
       );
+      await sv1.save();
 
-      sv.$ = 42;
-      await sv.save();
-      expect(storage, '42');
-
-      sv.$ = 0;
-      await sv.load();
-      expect(sv.$, 42);
+      final sv2 = SharedValue<List<int>>(
+        value: <int>[],
+        key: 'list_key',
+        customEncode: (v) => v.join(','),
+        customDecode: (s) =>
+            s == null ? <int>[] : s.split(',').map(int.parse).toList(),
+        customSave: (v) async => store['list_key'] = v.join(','),
+        customLoad: () async {
+          final s = store['list_key'];
+          return s == null ? <int>[] : s.split(',').map(int.parse).toList();
+        },
+      );
+      await sv2.load();
+      expect(sv2.$, [1, 2, 3]);
     });
   });
 
