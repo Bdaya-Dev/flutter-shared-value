@@ -5,7 +5,7 @@ homepage: https://github.com/Bdaya-Dev/flutter-shared-value
 repository: https://github.com/Bdaya-Dev/flutter-shared-value
 
 environment:
-  sdk: ">=3.5.0 <4.0.0"
+  sdk: ">=3.8.0 <4.0.0"
   flutter: ">=3.22.0"
 
 dependencies:
