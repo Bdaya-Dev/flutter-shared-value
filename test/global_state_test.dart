@@ -113,6 +113,139 @@ void main() {
         await sub.cancel();
       },
     );
+
+    test('streamWithInitial captures value at subscription time', () async {
+      final sv = SharedValue(value: 1);
+      sv.$ = 42;
+
+      final values = <int>[];
+      final sub = sv.streamWithInitial.listen(values.add);
+
+      await Future<void>.delayed(Duration.zero);
+      expect(values, [42]);
+      await sub.cancel();
+    });
+
+    test('streamWithInitial supports multiple independent subscriptions',
+        () async {
+      final sv = SharedValue(value: 10);
+      final valuesA = <int>[];
+      final valuesB = <int>[];
+
+      final subA = sv.streamWithInitial.listen(valuesA.add);
+      await Future<void>.delayed(Duration.zero);
+
+      sv.$ = 20;
+      await Future<void>.delayed(Duration.zero);
+
+      final subB = sv.streamWithInitial.listen(valuesB.add);
+      await Future<void>.delayed(Duration.zero);
+
+      sv.$ = 30;
+      await Future<void>.delayed(Duration.zero);
+
+      expect(valuesA, [10, 20, 30]);
+      expect(valuesB, [20, 30]);
+
+      await subA.cancel();
+      await subB.cancel();
+    });
+
+    test('streamWithInitial does not duplicate the initial value', () async {
+      final sv = SharedValue(value: 7);
+      final values = <int>[];
+      final sub = sv.streamWithInitial.listen(values.add);
+
+      await Future<void>.delayed(Duration.zero);
+      await Future<void>.delayed(Duration.zero);
+      await Future<void>.delayed(Duration.zero);
+
+      expect(values, [7]);
+      await sub.cancel();
+    });
+
+    test('streamWithInitial forwards many rapid changes in order', () async {
+      final sv = SharedValue(value: 0);
+      final values = <int>[];
+      final sub = sv.streamWithInitial.listen(values.add);
+
+      await Future<void>.delayed(Duration.zero);
+
+      for (var i = 1; i <= 10; i++) {
+        sv.$ = i;
+      }
+
+      await Future<void>.delayed(Duration.zero);
+      expect(values, [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
+      await sub.cancel();
+    });
+
+    test('streamWithInitial works with String type', () async {
+      final sv = SharedValue(value: 'hello');
+      final values = <String>[];
+      final sub = sv.streamWithInitial.listen(values.add);
+
+      await Future<void>.delayed(Duration.zero);
+      sv.$ = 'world';
+      await Future<void>.delayed(Duration.zero);
+
+      expect(values, ['hello', 'world']);
+      await sub.cancel();
+    });
+
+    test('streamWithInitial works with nullable type', () async {
+      final sv = SharedValue<int?>(value: null);
+      final values = <int?>[];
+      final sub = sv.streamWithInitial.listen(values.add);
+
+      await Future<void>.delayed(Duration.zero);
+      sv.$ = 5;
+      await Future<void>.delayed(Duration.zero);
+      sv.$ = null;
+      await Future<void>.delayed(Duration.zero);
+
+      expect(values, [null, 5, null]);
+      await sub.cancel();
+    });
+
+    test('cancelling streamWithInitial subscription stops receiving', () async {
+      final sv = SharedValue(value: 0);
+      final values = <int>[];
+      final sub = sv.streamWithInitial.listen(values.add);
+
+      await Future<void>.delayed(Duration.zero);
+      sv.$ = 1;
+      await Future<void>.delayed(Duration.zero);
+
+      await sub.cancel();
+
+      sv.$ = 2;
+      sv.$ = 3;
+      await Future<void>.delayed(Duration.zero);
+
+      expect(values, [0, 1]);
+    });
+
+    test('each streamWithInitial call returns a fresh stream', () async {
+      final sv = SharedValue(value: 5);
+
+      final stream1 = sv.streamWithInitial;
+      final stream2 = sv.streamWithInitial;
+
+      expect(identical(stream1, stream2), isFalse);
+
+      final v1 = <int>[];
+      final v2 = <int>[];
+      final s1 = stream1.listen(v1.add);
+      final s2 = stream2.listen(v2.add);
+
+      await Future<void>.delayed(Duration.zero);
+      expect(v1, [5]);
+      expect(v2, [5]);
+
+      await s1.cancel();
+      await s2.cancel();
+    });
   });
 
   group('SharedValue - persistence', () {
