@@ -1,5 +1,3 @@
-library shared_value;
-
 import 'dart:async';
 import 'dart:convert';
 import 'dart:math';
@@ -142,7 +140,7 @@ class SharedValue<T> {
     $ = fn(_value);
   }
 
-  void _update({init: false}) {
+  void _update({bool init = false}) {
     // update the nonce
     nonce = random.nextDouble();
     stateNonceMap[identityHashCode(this)] = nonce!;
@@ -164,7 +162,7 @@ class SharedValue<T> {
     // short-circuit if predicate already satisfied
     if (predicate($)) return $;
     // otherwise, run predicate on every change
-    await for (T value in this.stream) {
+    await for (final T value in stream) {
       if (predicate(value)) break;
     }
     return $;
