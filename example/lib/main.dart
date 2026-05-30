@@ -25,9 +25,7 @@ void main() {
 
   runApp(
     // don't forget this!
-    SharedValue.wrapApp(
-      MyApp(),
-    ),
+    SharedValue.wrapApp(MyApp()),
   );
 }
 
@@ -38,25 +36,16 @@ class MyApp extends StatelessWidget {
 
     return MaterialApp(
       title: 'Flutter Demo',
-      theme: ThemeData(
-        primarySwatch: Colors.blue,
-      ),
+      theme: ThemeData(primarySwatch: Colors.blue),
       home: Scaffold(
-        appBar: AppBar(
-          title: Text("Shared value demo"),
-        ),
+        appBar: AppBar(title: Text("Shared value demo")),
         body: Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: <Widget>[
-              Text(
-                'You have pushed the button this many times:',
-              ),
+              Text('You have pushed the button this many times:'),
               CounterText(),
-              Padding(
-                padding: const EdgeInsets.all(32),
-                child: RandomText(),
-              ),
+              Padding(padding: const EdgeInsets.all(32), child: RandomText()),
             ],
           ),
         ),

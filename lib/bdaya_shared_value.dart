@@ -26,11 +26,7 @@ class SharedValue<T> {
   /// This must be done exactly once for the whole application.
   static Widget wrapApp(Widget app) {
     didWrap = true;
-    return StateManagerWidget(
-      app,
-      stateManager,
-      stateNonceMap,
-    );
+    return StateManagerWidget(app, stateManager, stateNonceMap);
   }
 
   T _value;
@@ -89,7 +85,7 @@ class SharedValue<T> {
           "alongside runApp() so that SharedValue can be initalized for you application.\n"
           "Example:\n"
           "\trunApp(SharedValue.wrapApp(MyApp()))",
-        )
+        ),
       ]);
     }
 

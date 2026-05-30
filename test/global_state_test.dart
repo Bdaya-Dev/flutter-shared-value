@@ -97,20 +97,22 @@ void main() {
       await sub.cancel();
     });
 
-    test('streamWithInitial emits initial value before changes (regression)',
-        () async {
-      final sv = SharedValue(value: 99);
-      final values = <int>[];
-      final sub = sv.streamWithInitial.listen(values.add);
+    test(
+      'streamWithInitial emits initial value before changes (regression)',
+      () async {
+        final sv = SharedValue(value: 99);
+        final values = <int>[];
+        final sub = sv.streamWithInitial.listen(values.add);
 
-      await Future<void>.delayed(Duration.zero);
-      expect(values, [99]);
+        await Future<void>.delayed(Duration.zero);
+        expect(values, [99]);
 
-      sv.$ = 50;
-      await Future<void>.delayed(Duration.zero);
-      expect(values, [99, 50]);
-      await sub.cancel();
-    });
+        sv.$ = 50;
+        await Future<void>.delayed(Duration.zero);
+        expect(values, [99, 50]);
+        await sub.cancel();
+      },
+    );
   });
 
   group('SharedValue - persistence', () {
@@ -280,8 +282,9 @@ void main() {
   });
 
   group('SharedValue - widget integration', () {
-    testWidgets('widget rebuilds when watched SharedValue changes',
-        (tester) async {
+    testWidgets('widget rebuilds when watched SharedValue changes', (
+      tester,
+    ) async {
       SharedValue.didWrap = false;
       SharedValue.stateNonceMap.clear();
 
