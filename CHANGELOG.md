@@ -1,5 +1,12 @@
 # Changelog
 
+## [5.0.1](https://github.com/Bdaya-Dev/flutter-shared-value/compare/v5.0.0...v5.0.1) (2026-05-31)
+
+
+### Bug Fixes
+
+* remove example/.metadata from git tracking ([10edbbd](https://github.com/Bdaya-Dev/flutter-shared-value/commit/10edbbd0df2a2a1b949ef01419bcec5f80bd1d08))
+
 ## [5.0.0](https://github.com/Bdaya-Dev/flutter-shared-value/compare/v4.0.0...v5.0.0) (2026-05-31)
 
 
