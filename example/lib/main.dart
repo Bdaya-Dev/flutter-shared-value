@@ -4,19 +4,12 @@ import 'package:bdaya_shared_value/bdaya_shared_value.dart';
 import 'package:flutter/material.dart';
 
 // This global SharedValue can be shared across the entire app
-final SharedValue<int> counter = SharedValue(
-  value: 0, // initial value
-  key: "counter", // disk storage key for shared_preferences
-  autosave: true, // autosave to shared prefs when value changes
-);
+final SharedValue<int> counter = SharedValue(value: 0);
 
 final SharedValue<Duration> randomValue = SharedValue(value: Duration.zero);
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
-
-  // load previous value from shared prefs
-  counter.load();
 
   DateTime startedAt = DateTime.now();
   Timer.periodic(Duration(milliseconds: 50), (timer) {

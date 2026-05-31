@@ -6,7 +6,6 @@ import 'package:flutter_test/flutter_test.dart';
 void main() {
   setUp(() {
     SharedValue.didWrap = true;
-    SharedValue.stateNonceMap.clear();
   });
 
   group('SharedValue - initial value', () {
@@ -36,17 +35,20 @@ void main() {
 
     test('setIfChanged skips when value is equal', () {
       final sv = SharedValue(value: 5);
-      final nonceBefore = sv.nonce;
+      final values = <int>[];
+      sv.stream.listen(values.add);
       sv.setIfChanged(5);
-      expect(sv.nonce, nonceBefore);
+      expect(values, isEmpty);
     });
 
-    test('setIfChanged updates when value differs', () {
+    test('setIfChanged updates when value differs', () async {
       final sv = SharedValue(value: 5);
-      final nonceBefore = sv.nonce;
+      final values = <int>[];
+      sv.stream.listen(values.add);
       sv.setIfChanged(10);
       expect(sv.$, 10);
-      expect(sv.nonce, isNot(nonceBefore));
+      await Future<void>.delayed(Duration.zero);
+      expect(values, [10]);
     });
 
     test('setState throws when wrapApp was not called', () {
@@ -248,153 +250,6 @@ void main() {
     });
   });
 
-  group('SharedValue - persistence', () {
-    test('save and load round-trip via customSave/customLoad', () async {
-      final store = <String, int>{};
-      final sv1 = SharedValue<int>(
-        value: 42,
-        key: 'test_int',
-        customSave: (v) async => store['test_int'] = v,
-        customLoad: () async => store['test_int'] ?? 0,
-      );
-      await sv1.save();
-
-      final sv2 = SharedValue<int>(
-        value: 0,
-        key: 'test_int',
-        customSave: (v) async => store['test_int'] = v,
-        customLoad: () async => store['test_int'] ?? 0,
-      );
-      await sv2.load();
-      expect(sv2.$, 42);
-    });
-
-    test('load returns customLoad value', () async {
-      final sv = SharedValue<int>(
-        value: 0,
-        customLoad: () async => 99,
-        customSave: (_) async {},
-      );
-      await sv.load();
-      expect(sv.$, 99);
-    });
-
-    test('save calls customSave with current value', () async {
-      int? saved;
-      final sv = SharedValue<int>(
-        value: 0,
-        customSave: (v) async => saved = v,
-        customLoad: () async => 0,
-      );
-      sv.$ = 42;
-      await sv.save();
-      expect(saved, 42);
-    });
-
-    test('autosave triggers customSave on value change', () async {
-      int? saved;
-      final sv = SharedValue<int>(
-        value: 0,
-        autosave: true,
-        customSave: (v) async => saved = v,
-        customLoad: () async => 0,
-      );
-
-      sv.$ = 42;
-      await Future<void>.delayed(const Duration(milliseconds: 50));
-      expect(saved, 42);
-    });
-
-    test('load asserts when customLoad is null', () {
-      final sv = SharedValue<int>(value: 0, key: 'k');
-      expect(() => sv.load(), throwsA(isA<AssertionError>()));
-    });
-
-    test('save asserts when customSave is null', () {
-      final sv = SharedValue<int>(value: 0, key: 'k');
-      expect(() => sv.save(), throwsA(isA<AssertionError>()));
-    });
-  });
-
-  group('SharedValue - customEncode/customDecode', () {
-    test('serialize uses customEncode when provided', () {
-      final sv = SharedValue<List<int>>(
-        value: [1, 2, 3],
-        customEncode: (v) => v.join(','),
-      );
-      expect(sv.serialize([1, 2, 3]), '1,2,3');
-    });
-
-    test('serialize falls back to jsonEncode', () {
-      final sv = SharedValue<int>(value: 42);
-      expect(sv.serialize(42), '42');
-    });
-
-    test('deserialize uses customDecode when provided', () {
-      final sv = SharedValue<List<int>>(
-        value: [],
-        customDecode: (s) =>
-            s == null ? <int>[] : s.split(',').map(int.parse).toList(),
-      );
-      expect(sv.deserialize('1,2,3'), [1, 2, 3]);
-    });
-
-    test('deserialize falls back to jsonDecode', () {
-      final sv = SharedValue<int>(value: 0);
-      expect(sv.deserialize('42'), 42);
-    });
-
-    test('customDecode receives null for missing key (v3.1.3 fix)', () async {
-      String? received = 'sentinel';
-      final sv = SharedValue<String>(
-        value: 'default',
-        key: 'missing_key',
-        customDecode: (s) {
-          received = s;
-          return s ?? 'fallback';
-        },
-        customLoad: () async => 'fallback',
-      );
-      // Verify customDecode handles null correctly (unit test of deserialize)
-      final result = sv.deserialize(null);
-      expect(received, isNull);
-      expect(result, 'fallback');
-    });
-
-    test('custom encode/decode round-trip via persistence', () async {
-      final store = <String, String?>{};
-
-      final sv1 = SharedValue<List<int>>(
-        value: [1, 2, 3],
-        key: 'list_key',
-        customEncode: (v) => v.join(','),
-        customDecode: (s) =>
-            s == null ? <int>[] : s.split(',').map(int.parse).toList(),
-        customSave: (v) async => store['list_key'] = v.join(','),
-        customLoad: () async {
-          final s = store['list_key'];
-          return s == null ? <int>[] : s.split(',').map(int.parse).toList();
-        },
-      );
-      await sv1.save();
-
-      final sv2 = SharedValue<List<int>>(
-        value: <int>[],
-        key: 'list_key',
-        customEncode: (v) => v.join(','),
-        customDecode: (s) =>
-            s == null ? <int>[] : s.split(',').map(int.parse).toList(),
-        customSave: (v) async => store['list_key'] = v.join(','),
-        customLoad: () async {
-          final s = store['list_key'];
-          return s == null ? <int>[] : s.split(',').map(int.parse).toList();
-        },
-      );
-      await sv2.load();
-      expect(sv2.$, [1, 2, 3]);
-    });
-  });
-
   group('SharedValue - waitUntil', () {
     test('resolves immediately if predicate is satisfied', () async {
       final sv = SharedValue(value: 10);
@@ -417,25 +272,25 @@ void main() {
   });
 
   group('SharedValueInheritedModel', () {
-    test('updateShouldNotify detects map changes', () {
+    test('updateShouldNotify returns true when keys changed', () {
       final old = SharedValueInheritedModel(
-        stateNonceMap: {1: 0.5, 2: 0.3},
+        changedKeys: const {},
         child: const SizedBox(),
       );
       final current = SharedValueInheritedModel(
-        stateNonceMap: {1: 0.5, 2: 0.7},
+        changedKeys: {1},
         child: const SizedBox(),
       );
       expect(current.updateShouldNotify(old), isTrue);
     });
 
-    test('updateShouldNotify returns false for equal maps', () {
+    test('updateShouldNotify returns false when no keys changed', () {
       final old = SharedValueInheritedModel(
-        stateNonceMap: {1: 0.5, 2: 0.3},
+        changedKeys: {1},
         child: const SizedBox(),
       );
       final current = SharedValueInheritedModel(
-        stateNonceMap: {1: 0.5, 2: 0.3},
+        changedKeys: const {},
         child: const SizedBox(),
       );
       expect(current.updateShouldNotify(old), isFalse);
@@ -443,11 +298,11 @@ void main() {
 
     test('updateShouldNotifyDependent filters by watched key', () {
       final old = SharedValueInheritedModel(
-        stateNonceMap: {1: 0.5, 2: 0.3},
+        changedKeys: const {},
         child: const SizedBox(),
       );
       final current = SharedValueInheritedModel(
-        stateNonceMap: {1: 0.5, 2: 0.7},
+        changedKeys: {2},
         child: const SizedBox(),
       );
 
@@ -462,7 +317,6 @@ void main() {
       tester,
     ) async {
       SharedValue.didWrap = false;
-      SharedValue.stateNonceMap.clear();
 
       final counter = SharedValue(value: 0);
       int buildCount = 0;

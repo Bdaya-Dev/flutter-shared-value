@@ -4,43 +4,53 @@ import 'package:flutter/widgets.dart';
 import 'inherited_model.dart';
 
 class StateManagerWidget extends StatefulWidget {
-  final Widget child;
-  final StateManagerWidgetState state;
-  final Map<int, double> stateNonceMap;
+  static final _changedKeys = <int>{};
+  static Future<void> Function()? _rebuild;
 
-  const StateManagerWidget(
-    this.child,
-    this.state,
-    this.stateNonceMap, {
-    super.key,
-  });
+  static void markChanged(int key) {
+    _changedKeys.add(key);
+  }
+
+  static Future<void> triggerRebuild() async {
+    await _rebuild?.call();
+  }
+
+  final Widget child;
+
+  const StateManagerWidget({super.key, required this.child});
 
   @override
-  // ignore: no_logic_in_create_state
-  StateManagerWidgetState createState() => state;
+  State<StateManagerWidget> createState() => _StateManagerWidgetState();
 }
 
-class StateManagerWidgetState extends State<StateManagerWidget> {
-  Future<void> rebuild() async {
-    if (!mounted) return;
+class _StateManagerWidgetState extends State<StateManagerWidget> {
+  @override
+  void initState() {
+    super.initState();
+    StateManagerWidget._rebuild = _doRebuild;
+  }
 
-    // if there's a current frame,
+  @override
+  void dispose() {
+    if (StateManagerWidget._rebuild == _doRebuild) {
+      StateManagerWidget._rebuild = null;
+    }
+    super.dispose();
+  }
+
+  Future<void> _doRebuild() async {
+    if (!mounted) return;
     if (SchedulerBinding.instance.schedulerPhase != SchedulerPhase.idle) {
-      // wait for the end of that frame.
       await SchedulerBinding.instance.endOfFrame;
       if (!mounted) return;
     }
-
     setState(() {});
   }
 
   @override
   Widget build(BuildContext context) {
-    return SharedValueInheritedModel(
-      // A copy of stateNonceMap must be provided here so that
-      // SharedValueInheritedModel can compare old vs new nonce values.
-      stateNonceMap: Map.of(widget.stateNonceMap),
-      child: widget.child,
-    );
+    final changed = Set<int>.of(StateManagerWidget._changedKeys);
+    StateManagerWidget._changedKeys.clear();
+    return SharedValueInheritedModel(changedKeys: changed, child: widget.child);
   }
 }
