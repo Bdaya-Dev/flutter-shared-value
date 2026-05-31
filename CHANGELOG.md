@@ -1,3 +1,5 @@
+# Changelog
+
 ## [4.0.0](https://github.com/Bdaya-Dev/flutter-shared-value/compare/v3.1.3...v4.0.0) (2026-05-30)
 
 ### ⚠ BREAKING CHANGES
