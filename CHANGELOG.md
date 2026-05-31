@@ -1,5 +1,30 @@
 # Changelog
 
+## [5.0.0](https://github.com/Bdaya-Dev/flutter-shared-value/compare/v4.0.0...v5.0.0) (2026-05-31)
+
+
+### ⚠ BREAKING CHANGES
+
+* persistence API removed entirely (load, save, key, autosave, customEncode, customDecode, customSave, customLoad, serialize, deserialize, SharedValueStorage). Use external persistence solutions and set SharedValue.$ directly.
+* shared_preferences is no longer a dependency. load()/save() require customSave/customLoad callbacks. Users who relied on the built-in SharedPreferences persistence must provide their own callbacks.
+* rxdart is no longer a transitive dependency. Consumers who relied on rxdart being pulled in transitively must add it directly.
+
+### Features
+
+* clean API redesign — remove persistence, optimize internals ([145c65f](https://github.com/Bdaya-Dev/flutter-shared-value/commit/145c65f3d6bdee802f7c465707840de98efbfbcf))
+* remove rxdart dependency ([7b8a6ec](https://github.com/Bdaya-Dev/flutter-shared-value/commit/7b8a6ec1437683376938ea37679aff206d9615b7))
+* remove shared_preferences dependency, make persistence pluggable ([5906895](https://github.com/Bdaya-Dev/flutter-shared-value/commit/590689567c63406850e1041685b4a0525d13b078))
+
+
+### Bug Fixes
+
+* add # Changelog header to fix release-please insertion order ([7815ec7](https://github.com/Bdaya-Dev/flutter-shared-value/commit/7815ec7a197225c7caccf4de24dea5c68d59ed6b))
+
+
+### Miscellaneous
+
+* clean up .gitignore and remove tracked IDE/generated files ([b2438b3](https://github.com/Bdaya-Dev/flutter-shared-value/commit/b2438b32feb009e53faf7e9eac10f411088be8a3))
+
 ## [4.0.0](https://github.com/Bdaya-Dev/flutter-shared-value/compare/v3.1.3...v4.0.0) (2026-05-30)
 
 ### ⚠ BREAKING CHANGES
